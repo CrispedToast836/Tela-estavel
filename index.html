@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e0f12">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Estável">
+  <title>Estável</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- Barra superior: nome, estado da estabilização e tela cheia -->
+  <header class="topbar">
+    <div class="brand">Estável</div>
+    <div id="status" class="status">iniciando…</div>
+    <button id="btnFull" class="icon-btn" aria-label="Tela cheia">⛶</button>
+  </header>
+
+  <!-- Aviso quando não há sensores / permissão negada -->
+  <div id="warn" class="warn" hidden>
+    <span id="warnText"></span>
+    <button id="warnClose" class="icon-btn small" aria-label="Fechar aviso">✕</button>
+  </div>
+
+  <!-- Controles do modo Texto -->
+  <div id="bar-text" class="modebar">
+    <button id="btnOpen" class="btn">Abrir</button>
+    <button id="btnPaste" class="btn">Colar</button>
+    <button id="btnFontDown" class="btn sq" aria-label="Diminuir fonte">A−</button>
+    <button id="btnFontUp" class="btn sq" aria-label="Aumentar fonte">A+</button>
+    <button id="btnSpacing" class="btn sq" aria-label="Espaçamento">↕</button>
+    <button id="btnTheme" class="btn sq" aria-label="Tema">◐</button>
+  </div>
+
+  <!-- Controles do modo Vídeo -->
+  <div id="bar-video" class="modebar" hidden>
+    <button id="btnVideoFile" class="btn grow">Vídeo do celular</button>
+    <button id="btnYoutube" class="btn grow">Link do YouTube</button>
+  </div>
+
+  <!-- Moldura: o #stage fica com folga em volta e é ele que se move -->
+  <main id="frame">
+    <div id="stage" data-mode="text">
+      <section id="reader">
+        <article id="readerContent"></article>
+      </section>
+      <section id="player" hidden>
+        <video id="video" controls playsinline hidden></video>
+        <iframe id="yt" hidden title="YouTube"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen></iframe>
+        <div id="videoEmpty" class="empty">
+          <p>Escolha um vídeo do celular ou cole um link do YouTube.</p>
+          <p class="muted">Dica: não use a tela cheia do próprio player — ela sai da moldura e perde a estabilização. Use o botão ⛶ lá em cima.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Barra inferior: botões grandes para usar com uma mão -->
+  <nav class="bottombar">
+    <button class="tab active" data-mode="text"><b>📖</b><span>Texto</span></button>
+    <button class="tab" data-mode="video"><b>🎬</b><span>Vídeo</span></button>
+    <button id="btnToggle" class="tab power"><b>⏻</b><span>Estabilizar</span></button>
+    <button id="btnCalib" class="tab"><b>◎</b><span>Calibrar</span></button>
+    <button id="btnSettings" class="tab"><b>⚙</b><span>Ajustes</span></button>
+  </nav>
+</div>
+
+<!-- Primeira abertura no iPhone: precisa de um toque para pedir permissão -->
+<div id="permOverlay" class="overlay" hidden>
+  <div class="card">
+    <h1>Estável</h1>
+    <p>Para estabilizar a tela, o app precisa ler o movimento do celular.</p>
+    <button id="btnPerm" class="btn primary wide">Ativar sensores</button>
+    <button id="btnNoPerm" class="btn wide ghost">Usar sem estabilização</button>
+  </div>
+</div>
+
+<!-- Colar texto -->
+<dialog id="dlgPaste" class="dlg">
+  <h2>Colar texto</h2>
+  <textarea id="pasteArea" placeholder="Cole o texto aqui…"></textarea>
+  <div class="row">
+    <button id="btnClipboard" class="btn">Da área de transferência</button>
+  </div>
+  <div class="row">
+    <button class="btn ghost grow" data-close>Cancelar</button>
+    <button id="btnPasteOk" class="btn primary grow">Ler</button>
+  </div>
+</dialog>
+
+<!-- Link do YouTube -->
+<dialog id="dlgYt" class="dlg">
+  <h2>Link do YouTube</h2>
+  <input id="ytInput" type="url" inputmode="url" placeholder="https://youtu.be/…" autocomplete="off">
+  <div class="row">
+    <button class="btn ghost grow" data-close>Cancelar</button>
+    <button id="btnYtOk" class="btn primary grow">Abrir</button>
+  </div>
+</dialog>
+
+<!-- Ajustes (fica embaixo para você ver o efeito ao vivo em cima) -->
+<dialog id="dlgSettings" class="dlg sheet">
+  <div class="sheet-head">
+    <h2>Ajustes da estabilização</h2>
+    <button class="icon-btn" data-close aria-label="Fechar">✕</button>
+  </div>
+  <div class="meter">
+    <div id="meterBox"><i id="meterDot"></i></div>
+    <div id="meterText" class="muted">—</div>
+  </div>
+  <div id="sliders"></div>
+  <label class="check">
+    <input type="checkbox" id="chkInvert">
+    <span>Inverter direção <small class="muted">(marque se a tela parecer tremer MAIS)</small></span>
+  </label>
+  <div class="row">
+    <button id="btnReset" class="btn grow">Restaurar padrão</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<input type="file" id="fileText" accept=".txt,.epub,text/plain,application/epub+zip" hidden>
+<input type="file" id="fileVideo" accept="video/*" hidden>
+
+<script src="app.js"></script>
+</body>
+</html>
